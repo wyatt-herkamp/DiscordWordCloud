@@ -3,3 +3,4 @@ logs/
 /test/
 *.iml
 /target/
+dependency-reduced-pom.xml

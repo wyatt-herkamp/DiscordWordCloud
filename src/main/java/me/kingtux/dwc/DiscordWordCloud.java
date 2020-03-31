@@ -8,11 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.io.*;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -33,7 +30,7 @@ public class DiscordWordCloud {
         }
         commandCore = new JDA4CommandCore(jda, "!");
         commandCore.registerCommand(new WordCloudCommand(this));
-        if(!tmpFolder.exists())tmpFolder.mkdirs();
+        if (!tmpFolder.exists()) tmpFolder.mkdirs();
         tmpFolder.deleteOnExit();
     }
 
@@ -74,5 +71,53 @@ public class DiscordWordCloud {
 
     public JDA getJDA() {
         return jda;
+    }
+
+    public List<String> getGuildBannedWords(Guild guild) {
+        List<String> words = new ArrayList<>();
+        File guildFolder = new File(guilds, guild.getId());
+        File bannedWords = new File(guildFolder, "banned_words.txt");
+        try {
+            bannedWords.createNewFile();
+        } catch (IOException e) {
+            LOGGER.error("Unable to create file", e);
+        }
+        try (FileReader fr = new FileReader(bannedWords)) {
+            try (BufferedReader br = new BufferedReader(fr)) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    words.add(line);
+                }
+            }
+        } catch (IOException e) {
+            LOGGER.error("Unable to read file", e);
+        }
+        return words;
+    }
+
+    public void setBannedWords(Guild guild, List<String> words) {
+        File guildFolder = new File(guilds, guild.getId());
+        File bannedWords = new File(guildFolder, "banned_words.txt");
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(bannedWords))) {
+            for (String word : words) {
+                bufferedWriter.newLine();
+                bufferedWriter.write(word);
+            }
+        } catch (IOException e) {
+            LOGGER.error("Unable to save words", e);
+        }
+    }
+
+    public boolean addWord(Guild guild, String addWord) {
+        File guildFolder = new File(guilds, guild.getId());
+        File bannedWords = new File(guildFolder, "banned_words.txt");
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(bannedWords, true))) {
+            bufferedWriter.newLine();
+            bufferedWriter.write(addWord);
+        } catch (IOException e) {
+            LOGGER.error("Unable to save words", e);
+            return false;
+        }
+        return true;
     }
 }
